@@ -1,0 +1,71 @@
+import type { Product, Category } from "./types"
+
+export const categories: Category[] = [
+  { id: "1", name: "Electronics", slug: "electronics", created_at: "", updated_at: "", },
+  { id: "2", name: "Clothing", slug: "clothing", created_at: "", updated_at: "", },
+  { id: "3", name: "Home & Garden", slug: "home-garden", created_at: "", updated_at: "", },
+  { id: "4", name: "Sports", slug: "sports", created_at: "", updated_at: "", },
+]
+
+export const products: Product[] = [
+  {
+    id: "1",
+    name: "Wireless Headphones",
+    description: "Premium noise-cancelling wireless headphones with 30-hour battery life.",
+    price: 299.99,
+    image: "/placeholder.svg?height=400&width=400&text=Headphones",
+    category: "electronics",
+    stock: 15,
+    featured: true,
+  },
+  {
+    id: "2",
+    name: "Smart Watch",
+    description: "Advanced fitness tracking with heart rate monitor and GPS.",
+    price: 399.99,
+    image: "/placeholder.svg?height=400&width=400&text=Smart+Watch",
+    category: "electronics",
+    stock: 8,
+    featured: true,
+  },
+  {
+    id: "3",
+    name: "Organic Cotton T-Shirt",
+    description: "Comfortable, sustainable cotton t-shirt in multiple colors.",
+    price: 29.99,
+    image: "/placeholder.svg?height=400&width=400&text=T-Shirt",
+    category: "clothing",
+    stock: 25,
+    featured: false,
+  },
+  {
+    id: "4",
+    name: "Yoga Mat",
+    description: "Non-slip yoga mat perfect for home workouts and studio classes.",
+    price: 49.99,
+    image: "/placeholder.svg?height=400&width=400&text=Yoga+Mat",
+    category: "sports",
+    stock: 12,
+    featured: true,
+  },
+  {
+    id: "5",
+    name: "Coffee Maker",
+    description: "Programmable drip coffee maker with thermal carafe.",
+    price: 129.99,
+    image: "/placeholder.svg?height=400&width=400&text=Coffee+Maker",
+    category: "home-garden",
+    stock: 6,
+    featured: false,
+  },
+  {
+    id: "6",
+    name: "Running Shoes",
+    description: "Lightweight running shoes with advanced cushioning technology.",
+    price: 159.99,
+    image: "/placeholder.svg?height=400&width=400&text=Running+Shoes",
+    category: "sports",
+    stock: 20,
+    featured: true,
+  },
+]
