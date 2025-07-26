@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { Product, Category } from "@/lib/types/database"
+import type { Product, Category, ProductReview } from "@/lib/types/database"
 import { products as fallbackProducts, categories as fallbackCategories } from "./fallback"
 
 export async function getProducts(options?: {
@@ -18,12 +18,21 @@ export async function getProducts(options?: {
           id,
           name,
           slug
+        ),
+        product_variants (
+          id,
+          name,
+          value,
+          price_modifier,
+          stock
+        ),
+        product_reviews (
+          rating
         )
       `)
 
     // Apply filters
     if (options?.category) {
-      // First get the category ID from slug
       const { data: categoryData } = await supabase
         .from("categories")
         .select("id")
@@ -68,14 +77,27 @@ export async function getProducts(options?: {
 
     if (error) {
       console.error("Error fetching products from Supabase:", error)
-      // Return filtered fallback data
       return filterFallbackProducts(options)
     }
 
-    return data || []
+    // Calculate average ratings
+    const productsWithRatings = (data || []).map((product) => {
+      const reviews = product.product_reviews || []
+      const averageRating =
+        reviews.length > 0
+          ? reviews.reduce((sum: number, review: ProductReview) => sum + review.rating, 0) / reviews.length
+          : 0
+
+      return {
+        ...product,
+        average_rating: averageRating,
+        review_count: reviews.length,
+      }
+    })
+
+    return productsWithRatings
   } catch (error) {
     console.error("Error connecting to Supabase:", error)
-    // Return filtered fallback data
     return filterFallbackProducts(options)
   }
 }
@@ -89,7 +111,6 @@ function filterFallbackProducts(options?: {
 }): Product[] {
   let filtered = [...fallbackProducts]
 
-  // Apply filters
   if (options?.category) {
     filtered = filtered.filter((product) => product.categories?.slug === options.category)
   }
@@ -106,7 +127,6 @@ function filterFallbackProducts(options?: {
     )
   }
 
-  // Apply sorting
   if (options?.sortBy) {
     switch (options.sortBy) {
       case "price-low":
@@ -140,22 +160,57 @@ export async function getProduct(id: string): Promise<Product | null> {
           id,
           name,
           slug
+        ),
+        product_variants (
+          id,
+          name,
+          value,
+          price_modifier,
+          stock
+        ),
+        product_reviews (
+          id,
+          user_id,
+          rating,
+          title,
+          comment,
+          verified_purchase,
+          created_at
         )
       `)
       .eq("id", id)
       .single()
 
-    if (error) {
+    if (error || !data) {
       console.error("Error fetching product from Supabase:", error)
-      // Return fallback product
-      return fallbackProducts.find((p) => p.id === id) || null
+      const fallback = fallbackProducts.find((p) => p.id === id)
+      return fallback ? {
+        ...fallback,
+        average_rating: 0,
+        review_count: 0,
+      } : null
     }
 
-    return data
+    // Calculate average rating
+    const reviews = data.product_reviews || []
+    const averageRating =
+      reviews.length > 0 
+      ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length 
+      : 0
+
+    return {
+      ...data,
+      // average_rating: averageRating,
+      // review_count: reviews.length,
+    }
   } catch (error) {
     console.error("Error connecting to Supabase:", error)
-    // Return fallback product
-    return fallbackProducts.find((p) => p.id === id) || null
+    const fallback = fallbackProducts.find((p) => p.id === id)
+    return fallback ? {
+      ...fallback,
+      average_rating: 0,
+      review_count: 0,
+    } : null
   }
 }
 
@@ -179,4 +234,26 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getFeaturedProducts(): Promise<Product[]> {
   return getProducts({ featured: true, limit: 8 })
+}
+
+export async function submitProductReview(
+  productId: string,
+  userId: string,
+  review: { rating: number; title: string; comment: string },
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.from("product_reviews").insert({
+    product_id: productId,
+    user_id: userId,
+    rating: review.rating,
+    title: review.title || null,
+    comment: review.comment || null,
+    verified_purchase: false, // You can implement logic to check if user actually purchased
+  })
+
+  if (error) {
+    console.error("Error submitting review:", error)
+    throw error
+  }
 }

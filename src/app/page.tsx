@@ -1,9 +1,9 @@
 import { HeroSection } from "@/components/hero-section"
 import { ProductCard } from "@/components/product-card"
-import { products } from "@/lib/data"
+import { getFeaturedProducts } from "@/lib/data/products"
 
-export default function HomePage() {
-  const featuredProducts = products.filter((product) => product.featured)
+export default async function HomePage() {
+  const featuredProducts = await getFeaturedProducts()
 
   return (
     <div className="min-h-screen">

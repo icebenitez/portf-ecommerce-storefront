@@ -7,14 +7,22 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useCart } from "@/contexts/cart-context"
-import { categories } from "@/lib/data"
+import { UserMenu } from "@/components/auth/user-menu"
+
+// Static categories for navigation - you can make this dynamic later
+const navigationCategories = [
+  { id: "1", name: "Electronics", slug: "electronics" },
+  { id: "2", name: "Clothing", slug: "clothing" },
+  { id: "3", name: "Home & Garden", slug: "home-garden" },
+  { id: "4", name: "Sports", slug: "sports" },
+]
 
 export function Header() {
   const { state } = useCart()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between mx-auto px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded-full bg-primary" />
@@ -26,7 +34,7 @@ export function Header() {
           <Link href="/products" className="text-sm font-medium hover:text-primary transition-colors">
             All Products
           </Link>
-          {categories.map((category) => (
+          {navigationCategories.map((category) => (
             <Link
               key={category.id}
               href={`/products?category=${category.slug}`}
@@ -37,7 +45,7 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Search and Cart */}
+        {/* Search, Cart, and User Menu */}
         <div className="flex items-center space-x-4">
           <div className="hidden md:flex items-center space-x-2">
             <Input type="search" placeholder="Search products..." className="w-64" />
@@ -57,6 +65,9 @@ export function Header() {
             </Button>
           </Link>
 
+          {/* User Menu */}
+          <UserMenu />
+
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild>
@@ -69,7 +80,7 @@ export function Header() {
                 <Link href="/products" className="text-lg font-medium">
                   All Products
                 </Link>
-                {categories.map((category) => (
+                {navigationCategories.map((category) => (
                   <Link key={category.id} href={`/products?category=${category.slug}`} className="text-lg font-medium">
                     {category.name}
                   </Link>

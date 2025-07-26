@@ -6,17 +6,20 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/contexts/cart-context"
 
 export default function CartPage() {
-  const { state, dispatch } = useCart()
+  const { state, removeItem, updateQuantity } = useCart()
 
-  const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } })
-  }
-
-  const removeItem = (id: string) => {
-    dispatch({ type: "REMOVE_ITEM", payload: id })
+  if (state.isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <p className="text-lg">Loading cart...</p>
+        </div>
+      </div>
+    )
   }
 
   if (state.items.length === 0) {
@@ -41,60 +44,86 @@ export default function CartPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
-          {state.items.map((item) => (
-            <Card key={item.product.id}>
-              <CardContent className="p-6">
-                <div className="flex gap-4">
-                  <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                    <Image
-                      src={item.product.image || "/placeholder.svg"}
-                      alt={item.product.name}
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+          {state.items.map((item) => {
+            // Safely access product properties
+            const product = item.products
+            if (!product) {
+              console.error("Product not found for cart item:", item)
+              return null
+            }
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg mb-1">{item.product.name}</h3>
-                    <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{item.product.description}</p>
-                    <p className="font-bold text-lg">${item.product.price}</p>
-                  </div>
+            const selectedVariants = item.selected_variants || {}
+            const hasVariants = Object.keys(selectedVariants).length > 0
 
-                  <div className="flex flex-col items-end gap-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeItem(item.product.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+            return (
+              <Card key={item.id}>
+                <CardContent className="p-6">
+                  <div className="flex gap-4">
+                    <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                      <Image
+                        src={product.image || "/placeholder.svg?height=96&width=96&text=Product"}
+                        alt={product.name || "Product"}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
+
+                      {/* Show selected variants */}
+                      {hasVariants && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {Object.entries(selectedVariants).map(([variantType, variantValue]) => (
+                            <Badge key={variantType} variant="secondary" className="text-xs">
+                              {variantType}: {variantValue}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                        {product.description || "No description available"}
+                      </p>
+                      <p className="font-bold text-lg">${product.price?.toFixed(2) || "0.00"}</p>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-3">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
+                        onClick={() => removeItem(item.id)}
+                        className="text-destructive hover:text-destructive"
                       >
-                        <Minus className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
-                      <span className="w-12 text-center font-medium">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        disabled={item.quantity >= item.product.stock}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className="w-12 text-center font-medium">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          disabled={item.quantity >= (product.stock || 0)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         {/* Order Summary */}
@@ -105,14 +134,30 @@ export default function CartPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                {state.items.map((item) => (
-                  <div key={item.product.id} className="flex justify-between text-sm">
-                    <span>
-                      {item.product.name} × {item.quantity}
-                    </span>
-                    <span>${(item.product.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
+                {state.items.map((item) => {
+                  const product = item.products
+                  if (!product) return null
+
+                  const selectedVariants = item.selected_variants || {}
+                  const hasVariants = Object.keys(selectedVariants).length > 0
+
+                  return (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <div className="flex-1 min-w-0">
+                        <span className="block truncate">{product.name}</span>
+                        {hasVariants && (
+                          <span className="text-xs text-muted-foreground">
+                            {Object.entries(selectedVariants)
+                              .map(([type, value]) => `${type}: ${value}`)
+                              .join(", ")}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
+                      </div>
+                      <span className="ml-2 flex-shrink-0">${((product.price || 0) * item.quantity).toFixed(2)}</span>
+                    </div>
+                  )
+                })}
               </div>
 
               <Separator />

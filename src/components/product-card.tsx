@@ -1,28 +1,15 @@
-"use client"
-
-import type React from "react"
-
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { AddToCartButton } from "./add-to-cart-button"
 import type { Product } from "@/lib/types"
-import { useCart } from "@/contexts/cart-context"
 
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { dispatch } = useCart()
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    dispatch({ type: "ADD_ITEM", payload: product })
-  }
-
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-shadow">
       <Link href={`/products/${product.id}`}>
@@ -49,10 +36,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button onClick={handleAddToCart} className="w-full" disabled={product.stock === 0}>
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-        </Button>
+        <AddToCartButton product={product} className="w-full" />
       </CardFooter>
     </Card>
   )
