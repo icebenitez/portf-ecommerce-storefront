@@ -13,6 +13,7 @@ import { submitProductReview } from "@/lib/data/products"
 import { useAuth } from "@/contexts/auth-context"
 import type { Product } from "@/lib/types/database"
 import { createClient } from "@/lib/supabase/client"
+import { WishlistButton } from "@/components/wishlist-button"
 
 interface ProductDetailClientProps {
   product: Product
@@ -36,20 +37,20 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
     try {
       // await submitProductReview(product.id, user.id, reviewData)
       const supabase = createClient()
-      
-        const { error } = await supabase.from("product_reviews").insert({
-          product_id: product.id,
-          user_id: user.id,
-          rating: reviewData.rating,
-          title: reviewData.title || null,
-          comment: reviewData.comment || null,
-          verified_purchase: false, // You can implement logic to check if user actually purchased
-        })
-      
-        if (error) {
-          console.error("Error submitting review:", error)
-          throw error
-        }
+
+      const { error } = await supabase.from("product_reviews").insert({
+        product_id: product.id,
+        user_id: user.id,
+        rating: reviewData.rating,
+        title: reviewData.title || null,
+        comment: reviewData.comment || null,
+        verified_purchase: false, // You can implement logic to check if user actually purchased
+      })
+
+      if (error) {
+        console.error("Error submitting review:", error)
+        throw error
+      }
       alert("Review submitted successfully!")
       // In a real app, you'd refresh the reviews here or use optimistic updates
       window.location.reload()
@@ -86,6 +87,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
                 </span>
               </div>
+              <WishlistButton product={product} size="sm" />
             </div>
             <p className="text-2xl font-bold text-primary">${product.price}</p>
           </div>

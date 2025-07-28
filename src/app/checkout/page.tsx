@@ -33,13 +33,14 @@ export default function CheckoutPage() {
     cvv: "",
     nameOnCard: "",
   })
+  const [checkoutCompleted, setCheckoutCompleted] = useState(false)
 
   // Redirect if cart is empty
-  useEffect(() => {
-    if (!state.isLoading && state.items.length === 0) {
-      router.push("/cart")
-    }
-  }, [state.isLoading, state.items.length, router])
+  // useEffect(() => {
+  //   if (!state.isLoading && state.items.length === 0) {
+  //     router.push("/cart")
+  //   }
+  // }, [state.isLoading, state.items.length, router])
 
   // Update email when user changes
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function CheckoutPage() {
       // 2. Create order in database
       // 3. Send confirmation email
       // 4. Update inventory
-
+      setCheckoutCompleted(true)
       // Clear cart and redirect to success page
       await clearCartItems()
       router.push("/checkout/success")
@@ -76,7 +77,7 @@ export default function CheckoutPage() {
     } finally {
       setIsProcessing(false)
     }
-  }
+  };
 
   // Show loading state
   if (state.isLoading) {
@@ -87,12 +88,24 @@ export default function CheckoutPage() {
         </div>
       </div>
     )
-  }
+  };
 
-  // Redirect if cart is empty (this will happen after useEffect)
-  if (state.items.length === 0) {
+  // Only redirect to cart if checkout wasn't completed and cart is empty
+  if (state.items.length === 0 && !checkoutCompleted) {
+    router.push("/cart")
     return null
-  }
+  };
+
+  // If checkout was completed and cart is empty, show loading while redirecting
+  if (state.items.length === 0 && checkoutCompleted) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <p className="text-lg">Completing your order...</p>
+        </div>
+      </div>
+    )
+  };
 
   const subtotal = state.total
   const tax = subtotal * 0.1
@@ -135,7 +148,7 @@ export default function CheckoutPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName">First Name *</Label>
+                    <Label htmlFor="firstName" className="mb-1">First Name *</Label>
                     <Input
                       id="firstName"
                       name="firstName"
@@ -145,7 +158,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Label htmlFor="lastName" className="mb-1">Last Name *</Label>
                     <Input
                       id="lastName"
                       name="lastName"
@@ -156,7 +169,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email" className="mb-1">Email *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -164,11 +177,11 @@ export default function CheckoutPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    disabled={!!user?.email}
+                  // disabled={!!user?.email}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="mb-1">Phone Number</Label>
                   <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} />
                 </div>
               </CardContent>
@@ -181,26 +194,26 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="address">Street Address *</Label>
+                  <Label htmlFor="address" className="mb-1">Street Address *</Label>
                   <Input id="address" name="address" value={formData.address} onChange={handleInputChange} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="city">City *</Label>
+                    <Label htmlFor="city" className="mb-1">City *</Label>
                     <Input id="city" name="city" value={formData.city} onChange={handleInputChange} required />
                   </div>
                   <div>
-                    <Label htmlFor="state">State *</Label>
+                    <Label htmlFor="state" className="mb-1">State *</Label>
                     <Input id="state" name="state" value={formData.state} onChange={handleInputChange} required />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="zipCode">ZIP Code *</Label>
+                    <Label htmlFor="zipCode" className="mb-1">ZIP Code *</Label>
                     <Input id="zipCode" name="zipCode" value={formData.zipCode} onChange={handleInputChange} required />
                   </div>
                   <div>
-                    <Label htmlFor="country">Country *</Label>
+                    <Label htmlFor="country" className="mb-1">Country *</Label>
                     <Input id="country" name="country" value={formData.country} onChange={handleInputChange} required />
                   </div>
                 </div>
@@ -214,7 +227,7 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="nameOnCard">Name on Card *</Label>
+                  <Label htmlFor="nameOnCard" className="mb-1">Name on Card *</Label>
                   <Input
                     id="nameOnCard"
                     name="nameOnCard"
@@ -224,7 +237,7 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="cardNumber">Card Number *</Label>
+                  <Label htmlFor="cardNumber" className="mb-1">Card Number *</Label>
                   <Input
                     id="cardNumber"
                     name="cardNumber"
@@ -236,7 +249,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="expiryDate">Expiry Date *</Label>
+                    <Label htmlFor="expiryDate" className="mb-1">Expiry Date *</Label>
                     <Input
                       id="expiryDate"
                       name="expiryDate"
@@ -247,7 +260,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="cvv">CVV *</Label>
+                    <Label htmlFor="cvv" className="mb-1">CVV *</Label>
                     <Input
                       id="cvv"
                       name="cvv"
