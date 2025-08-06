@@ -27,39 +27,56 @@ export async function getCartItems(userId: string): Promise<DatabaseCartItem[]> 
   return data || []
 }
 
-export async function addToCart(userId: string, productId: string, quantity = 1) {
-  const supabase = createClient()
-
-  // Check if item already exists in cart
-  const { data: existingItem } = await supabase
+export async function addToCart(
+  userId: string,
+  productId: string,
+  quantity = 1,
+  selectedVariants: Record<string, string> = {}
+) {
+  console.log('userId', userId);
+  console.log('productId', productId);
+  console.log('quantity', quantity);
+  console.log('selectedVariants', selectedVariants);
+  const supabase = createClient();
+  ;
+  // Check if the same item with the same variants exists
+  const { data: existingItem, error: fetchError } = await supabase
     .from("cart_items")
     .select("*")
     .eq("user_id", userId)
     .eq("product_id", productId)
-    .single()
+    .eq("selected_variants", JSON.stringify(selectedVariants))
+    .single();
+
+  if (fetchError && fetchError.code !== "PGRST116") {
+    console.log('fetchError.code', fetchError.code)
+    console.error("Error checking cart item:", fetchError);
+    throw fetchError;
+  }
 
   if (existingItem) {
-    // Update existing item
-    const { error } = await supabase
+    // Item with same variants exists: update quantity
+    const { error: updateError } = await supabase
       .from("cart_items")
-      .update({ quantity: existingItem.quantity + quantity })
-      .eq("id", existingItem.id)
+      .update({ quantity: existingItem.quantity + quantity, updated_at: new Date().toISOString() })
+      .eq("id", existingItem.id);
 
-    if (error) {
-      console.error("Error updating cart item:", error)
-      throw error
+    if (updateError) {
+      console.error("Error updating cart item:", updateError);
+      throw updateError;
     }
   } else {
-    // Insert new item
-    const { error } = await supabase.from("cart_items").insert({
+    // Insert new cart item with selected variants
+    const { error: insertError } = await supabase.from("cart_items").insert({
       user_id: userId,
       product_id: productId,
       quantity,
-    })
+      selected_variants: selectedVariants,
+    });
 
-    if (error) {
-      console.error("Error adding to cart:", error)
-      throw error
+    if (insertError) {
+      console.error("Error adding to cart:", insertError);
+      throw insertError;
     }
   }
 }

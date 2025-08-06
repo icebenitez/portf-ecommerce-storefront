@@ -106,11 +106,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   // Save to localStorage for anonymous users
-  useEffect(() => {
-    if (!user && !state.isLoading) {
-      localStorage.setItem("cart", JSON.stringify(state.items))
+  // useEffect(() => {
+  //   if (!user && !state.isLoading) {
+  //     localStorage.setItem("cart", JSON.stringify(state.items))
+  //   }
+  // }, [state.items, user, state.isLoading])
+  const loadAnonymousCart = () => {
+    // Load from localStorage for anonymous users
+    const savedCart = localStorage.getItem("anonymous-cart")
+    if (savedCart) {
+      try {
+        const cartItems = JSON.parse(savedCart)
+        dispatch({ type: "SET_ITEMS", payload: cartItems })
+      } catch (error) {
+        console.error("Error loading cart from localStorage:", error)
+        dispatch({ type: "SET_ITEMS", payload: [] })
+      }
+    } else {
+      dispatch({ type: "SET_ITEMS", payload: [] })
     }
-  }, [state.items, user, state.isLoading])
+  }
 
   const loadCart = async (userId: string) => {
     try {
@@ -123,17 +138,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const addItem = async (product: Product) => {
+  useEffect(() => {
+    if (!user && !state.isLoading) {
+      localStorage.setItem("anonymous-cart", JSON.stringify(state.items))
+    }
+  }, [state.items, user, state.isLoading])
+
+  const addItem = async (product: Product & { selectedVariants?: Record<string, string> }) => {
+    // Validate product has required properties
+    if (!product || !product.id || product.price === undefined) {
+      console.error("Invalid product data:", product)
+      return
+    }
+
     if (user) {
       try {
-        await addToCart(user.id, product.id)
+        await addToCart(user.id, product.id, 1, product.selectedVariants || {})
         await loadCart(user.id)
       } catch (error) {
         console.error("Error adding item to cart:", error)
       }
     } else {
       // Handle anonymous cart (localStorage)
-      const existingItemIndex = state.items.findIndex((item) => item.products.id === product.id)
+      const cartKey = `${product.id}-${JSON.stringify(product.selectedVariants || {})}`
+      const existingItemIndex = state.items.findIndex((item) => {
+        const itemKey = `${item.products.id}-${JSON.stringify(item.selected_variants || {})}`
+        return itemKey === cartKey
+      })
 
       if (existingItemIndex >= 0) {
         const updatedItems = [...state.items]
@@ -145,6 +176,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           user_id: "anonymous",
           product_id: product.id,
           quantity: 1,
+          selected_variants: product.selectedVariants || {},
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           products: product,
